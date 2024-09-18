@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn #neural network
 from torch.nn import functional as F #activation functions
 import tiktoken
+import time 
 
 device = "cpu"
 if torch.cuda.is_available():
@@ -207,18 +208,25 @@ class DataLoaderLite:
             self.current_position = 0
         return x, y
     
-train_loader = DataLoaderLite(B=4, T=32)
+train_loader = DataLoaderLite(B=8, T=32)
+torch.set_float32_matmul_precision('high')
 
 model = GPT(GPTConfig())
 model.to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 for i in range(5):
+    start=time.time()
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
     logits,loss=model(x,y)
     loss.backward()
     optimizer.step()
-    print(f"step {i}, loss: {loss.item()}")
+    torch.cuda.synchronize() # wait for the GPU to finish work
+    end = time.time()
+    dt = (end - start)*1000 # time difference in miliseconds
+    tokens_per_sec = (train_loader.B * train_loader.T) / (end - start)
+    print(f"step {i}, loss: {loss.item()}, dt: {dt:.2f}ms, tok/sec: {tokens_per_sec:.2f}")
+
 import sys;sys.exit(0)
 
