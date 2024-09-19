@@ -212,10 +212,10 @@ class DataLoaderLite:
 train_loader = DataLoaderLite(B=4, T=1024)
 torch.set_float32_matmul_precision('high')
 
-model = GPT(GPTConfig())
+model = GPT(GPTConfig(vocab_size=50304))
 model.to(device)
 model=torch.compile(model)
-optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
+optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.95), eps=1e-8)
 for i in range(15):
     start=time.time()
     x, y = train_loader.next_batch()
@@ -224,12 +224,13 @@ for i in range(15):
     with torch.autocast(device_type=device, dtype=torch.bfloat16):
         logits, loss = model(x, y)
     loss.backward()
+    norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
     optimizer.step()
     torch.cuda.synchronize() # wait for the GPU to finish work
     end = time.time()
     dt = (end - start)*1000 # time difference in miliseconds
     tokens_per_sec = (train_loader.B * train_loader.T) / (end - start)
-    print(f"step {i}, loss: {loss.item()}, dt: {dt:.2f}ms, tok/sec: {tokens_per_sec:.2f}")
+    print(f"step {i:4d} | loss: {loss.item():.6f} | norm: {norm:.4f} | dt: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
 
 import sys;sys.exit(0)
 
