@@ -27,7 +27,7 @@ To improve GPU efficiency during training, the following optimizations were impl
 - Utilized numbers that are multiples of 2, as GPU cores operate more efficiently in powers of 2. This helps in reducing round trip time.
 
 ## HellaEval Performance Comparison
-![HellaEval Performance Comparison](path_to_your_image.png)  
+![HellaEval Performance Comparison](https://github.com/abhishekiiitbh2903/GPT-2/blob/main/Performance_Comparison.png)  
 
 
 ## Possible Reasons for Improved Performance
